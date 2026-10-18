@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Panel de coches · búsqueda de eléctrico familiar</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚗</text></svg>">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">🚗 <span>Panel de coches</span></div>
+    <nav id="tabs" role="tablist">
+      <a href="#inicio" data-tab="inicio">Inicio</a>
+      <a href="#nuevos" data-tab="nuevos">Nuevos</a>
+      <a href="#ocasion" data-tab="ocasion">Ocasión</a>
+      <a href="#evolucion" data-tab="evolucion">Evolución</a>
+      <a href="#privado" data-tab="privado">🔒 Privado</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <p id="loading" class="muted">Cargando datos…</p>
+
+  <!-- INICIO -->
+  <section id="tab-inicio" class="tab" hidden>
+    <div class="updated" id="updated"></div>
+    <h2>Candidatos: eléctrico familiar</h2>
+    <p class="muted small">Mejor precio actual de cada modelo en el Club (nuevo y ocasión), Spoticar y Carwow. Toca un modelo para ver su evolución.</p>
+    <div id="shortlist" class="grid cards3"></div>
+    <h3>Para comparar: Tesla y BYD</h3>
+    <div id="otras" class="grid cards3"></div>
+    <h3>Novedades desde la captura anterior</h3>
+    <div id="novedades" class="grid cards3"></div>
+  </section>
+
+  <!-- NUEVOS -->
+  <section id="tab-nuevos" class="tab" hidden>
+    <h2>Ofertas de coches nuevos del Club</h2>
+    <div class="filters" id="f-nuevos">
+      <input type="search" data-f="q" placeholder="Buscar modelo o versión…">
+      <select data-f="marca"><option value="">Todas las marcas</option></select>
+      <select data-f="comb"><option value="">Todos los combustibles</option></select>
+      <label class="toggle"><input type="checkbox" data-f="ev"> Solo 100 % eléctrico</label>
+      <label class="num">Precio desde <input type="number" data-f="pmin" inputmode="numeric" step="1000" placeholder="0"></label>
+      <label class="num">hasta <input type="number" data-f="pmax" inputmode="numeric" step="1000" placeholder="∞"></label>
+      <select data-f="orden">
+        <option value="precio">Más baratos primero</option>
+        <option value="-precio">Más caros primero</option>
+        <option value="-ahorro">Mayor ahorro (€)</option>
+        <option value="-dto">Mayor descuento (%)</option>
+        <option value="balloon">Cuota Balloon más baja</option>
+      </select>
+    </div>
+    <p class="count" id="c-nuevos"></p>
+    <div id="l-nuevos" class="grid cards"></div>
+    <button class="more" id="m-nuevos" hidden>Ver más</button>
+  </section>
+
+  <!-- OCASION -->
+  <section id="tab-ocasion" class="tab" hidden>
+    <h2>Coches de ocasión</h2>
+    <div class="seg" id="ocasion-src">
+      <button data-src="club" class="on">Club (company cars)</button>
+      <button data-src="spoticar">Spoticar empleados</button>
+      <button data-src="todos">Todos</button>
+    </div>
+    <div class="filters" id="f-ocasion">
+      <input type="search" data-f="q" placeholder="Buscar modelo, versión o color…">
+      <select data-f="marca"><option value="">Todas las marcas</option></select>
+      <select data-f="comb"><option value="">Todos los combustibles</option></select>
+      <label class="toggle"><input type="checkbox" data-f="ev"> Solo 100 % eléctrico</label>
+      <label class="toggle"><input type="checkbox" data-f="libres"> Ocultar reservados</label>
+      <label class="num">Precio máx. <input type="number" data-f="pmax" inputmode="numeric" step="1000" placeholder="∞"></label>
+      <label class="num">Km máx. <input type="number" data-f="kmax" inputmode="numeric" step="5000" placeholder="∞"></label>
+      <label class="num">Año desde <input type="number" data-f="amin" inputmode="numeric" min="2015" max="2030" placeholder="—"></label>
+      <select data-f="orden">
+        <option value="precio">Más baratos primero</option>
+        <option value="-precio">Más caros primero</option>
+        <option value="km">Menos km primero</option>
+        <option value="-matric">Más recientes primero</option>
+      </select>
+    </div>
+    <p class="count" id="c-ocasion"></p>
+    <div id="l-ocasion" class="grid cards"></div>
+    <button class="more" id="m-ocasion" hidden>Ver más</button>
+  </section>
+
+  <!-- EVOLUCION -->
+  <section id="tab-evolucion" class="tab" hidden>
+    <h2>Evolución de precios por modelo</h2>
+    <div class="filters">
+      <select id="ev-model" aria-label="Modelo"></select>
+      <label class="toggle"><input type="checkbox" id="ev-onlyev" checked> Solo eléctricos en la lista</label>
+    </div>
+    <p class="muted small">Puntos de las capturas de la web del Club (nuevo y ocasión, precio mínimo), Spoticar y de las ofertas recibidas por correo del Club. En cuotas: Balloon y renting publicados.</p>
+    <div class="chartbox"><canvas id="ch-precio"></canvas></div>
+    <div class="chartbox"><canvas id="ch-cuota"></canvas></div>
+    <h3>Ofertas por correo de este modelo</h3>
+    <div class="tablewrap"><table id="t-correos" class="tbl"></table></div>
+  </section>
+
+  <!-- PRIVADO -->
+  <section id="tab-privado" class="tab" hidden>
+    <div id="lock" class="lock">
+      <h2>🔒 Zona privada</h2>
+      <p class="muted">El renting, el presupuesto y la financiación están cifrados (AES-256-GCM). Se descifran solo en este navegador con la contraseña.</p>
+      <form id="pwform" autocomplete="off">
+        <input type="password" id="pw" placeholder="Contraseña" autocomplete="current-password" required>
+        <label class="toggle"><input type="checkbox" id="remember"> Recordar en este dispositivo</label>
+        <button type="submit">Desbloquear</button>
+        <p id="pwmsg" class="msg"></p>
+      </form>
+    </div>
+    <div id="priv" hidden></div>
+  </section>
+</main>
+<footer class="wrap muted small">Datos de mercado recopilados de la web del Stellantis Club, Spoticar, Carwow, Tesla y BYD. Precios orientativos; confirma siempre con el concesionario. <span id="gen"></span></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" integrity="sha384-NrKB+u6Ts6AtkIhwPixiKTzgSKNblyhlk0Sohlgar9UHUBzai/sgnNNWWd291xqt" crossorigin="anonymous"></script>
+<script src="app.js"></script>
+</body>
+</html>
