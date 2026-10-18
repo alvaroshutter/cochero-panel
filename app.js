@@ -19,6 +19,22 @@ const fts = t => { const d = new Date(t); return `${d.getDate()} ${MESES[d.getMo
 
 let D = null;           // datos públicos
 let charts = {};
+function chartTheme() {
+  if (typeof Chart === 'undefined') return;
+  const cs = getComputedStyle(document.documentElement);
+  Chart.defaults.color = cs.getPropertyValue('--mut').trim();
+  Chart.defaults.borderColor = cs.getPropertyValue('--line').trim();
+  Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+}
+function setupTheme() {
+  const saved = localStorage.getItem('theme'); if (saved) document.documentElement.dataset.theme = saved;
+  $('#themebtn').onclick = () => {
+    const dark = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim().toLowerCase() === '#0b0f17';
+    const t = dark ? 'light' : 'dark'; document.documentElement.dataset.theme = t; localStorage.setItem('theme', t);
+    chartTheme(); if (!$('#tab-evolucion').hidden) drawEvolucion();
+  };
+  chartTheme();
+}
 
 async function init() {
   try {
@@ -27,7 +43,7 @@ async function init() {
   } catch (e) { $('#loading').textContent = 'No se han podido cargar los datos.'; return; }
   $('#loading').remove();
   $('#gen').textContent = `Generado el ${fdate(D.generado)} a las ${D.generado.slice(11, 16)} (hora de Madrid).`;
-  renderInicio(); setupNuevos(); setupOcasion(); setupEvolucion(); setupPrivado();
+  setupTheme(); renderInicio(); setupNuevos(); setupOcasion(); setupEvolucion(); setupPrivado();
   window.addEventListener('hashchange', route); route();
 }
 
@@ -44,6 +60,28 @@ function route() {
   window.scrollTo(0, 0);
 }
 
+/* ------------------------------------------------------------ FOTOS */
+// Foto de referencia por marca/modelo (candidatos) para las filas sin foto propia.
+const REF_IMG = [
+  [/peugeot/i, /5008/, 'e5008'], [/peugeot/i, /3008/, 'e3008'], [/peugeot/i, /408/, 'e408'],
+  [/citro/i, /C5 ?AIRCROSS/i, 'ec5'], [/opel/i, /GRANDLAND/i, 'grandland'], [/leapmotor/i, /C10/i, 'c10'],
+];
+function refImg(x) {
+  if (!x.ev) return null;
+  const m = REF_IMG.find(([b, r]) => b.test(x.marca || '') && r.test(x.modelo || ''));
+  return m && D.specs[m[2]] ? D.specs[m[2]].img : null;
+}
+const initials = x => esc(String(x.marca || '?').slice(0, 1) + String(x.modelo || '').replace(/^\W+/, '').slice(0, 1));
+function photo(src, x, cls = '') {
+  return `<div class="ph ${cls}"><div class="placeholder">${initials(x)}</div>${src ? `<img src="${esc(src)}" alt="${esc((x.marca || '') + ' ' + (x.modelo || ''))}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" style="position:relative">` : ''}`;
+}
+const chip = (t, cls = '') => t ? `<span class="chip ${cls}">${t}</span>` : '';
+function specChips(sp) {
+  if (!sp) return '';
+  return [sp.auto && `🔋 ${esc(sp.auto)} WLTP`, sp.bat && `⚡ ${esc(sp.bat)}`, sp.maletero && `🧳 ${esc(sp.maletero)}`, sp.plazas && `👨‍👩‍👧 ${esc(sp.plazas)} plazas`].filter(Boolean).map(t => chip(t)).join('');
+}
+const roofHTML = sp => sp ? (sp.techo ? `<div class="roof">☀️ <span>${esc(sp.techo)}</span></div>` : `<div class="roof unk">☁️ <span>Techo de cristal: sin confirmar en la ficha oficial</span></div>`) : '';
+
 /* ------------------------------------------------------------ INICIO */
 function renderInicio() {
   const f = D.fechas;
@@ -52,10 +90,15 @@ function renderInicio() {
     ['Último correo', f.correos], ['Carwow/Tesla/BYD', f.carwow_tesla_byd]
   ].map(([l, d]) => `<span class="chip acc">${esc(l)}: <b>${fdate(d)}</b></span>`).join('');
 
+  // mejor precio: el nuevo Club más barato entre los candidatos
+  const withNew = D.shortlist.filter(s => s.nuevo[0] && s.nuevo[0].precio);
+  const bestId = withNew.length ? withNew.reduce((a, b) => a.nuevo[0].precio <= b.nuevo[0].precio ? a : b).id : null;
+
   $('#shortlist').innerHTML = D.shortlist.map(s => {
+    const sp = s.spec || {};
     const nv = s.nuevo[0];
     const oc = s.ocasion.mejor_libre || s.ocasion.mejor;
-    const sp = s.spoticar.mejor;
+    const spo = s.spoticar.mejor;
     const prices = [nv && nv.precio, oc && oc.precio].filter(Boolean);
     const min = prices.length ? Math.min(...prices) : null;
     const rows = [];
@@ -68,36 +111,54 @@ function renderInicio() {
       rows.push(`<div class="row"><span>Ocasión Club (${s.ocasion.n}, ${s.ocasion.libres} libres)</span><b class="${oc.precio === min ? 'best' : ''}">${eur(oc.precio)}</b></div>`);
       rows.push(`<div class="note">Mejor ${s.ocasion.mejor_libre ? 'libre' : '(reservado)'}: ${esc(oc.version)} · ${num(oc.km)} km · ${fmonth(oc.matric)}</div>`);
     } else rows.push(`<div class="row"><span>Ocasión Club</span><b class="muted">ninguno</b></div>`);
-    rows.push(sp ? `<div class="row"><span>Spoticar (${s.spoticar.n})</span><b>${eur(sp.precio)}</b></div>` : `<div class="row"><span>Spoticar</span><b class="muted">ninguno</b></div>`);
+    rows.push(spo ? `<div class="row"><span>Spoticar (${s.spoticar.n})</span><b>${eur(spo.precio)}</b></div>` : `<div class="row"><span>Spoticar</span><b class="muted">ninguno</b></div>`);
     if (s.carwow) {
       rows.push(`<div class="row"><span>Carwow contado / financiado</span><b>${eur(s.carwow.contado)} / ${eur(s.carwow.financiado)}</b></div>`);
       if (s.carwow.club_matric && s.carwow.contado) rows.push(`<div class="note">Club + matriculación ≈ ${eur(s.carwow.club_matric)} → ${s.carwow.contado - s.carwow.club_matric > 0 ? 'el Club ahorra ' + eur(s.carwow.contado - s.carwow.club_matric) + ' al contado' : 'Carwow más barato'}</div>`);
       else if (s.carwow.nota) rows.push(`<div class="note">${esc(s.carwow.nota)}</div>`);
     }
-    return `<div class="card sl" data-k="${esc(s.keys[0] || '')}"><h4>${esc(s.nombre)} <span class="chip ev">100 % eléctrico</span></h4>
-      <div class="ver">${esc(s.nota)}</div>${rows.join('')}<div class="note"><a href="#evolucion/${encodeURIComponent(s.keys[0] || '')}">Ver evolución de precio →</a></div></div>`;
+    const isBest = s.id === bestId, isFav = !!sp.fav;
+    const headline = nv ? nv.precio : (oc ? oc.precio : null);
+    const cuota = nv && nv.balloon ? `${eur(nv.balloon.cuota, 0)}/mes` : null;
+    const tags = [isFav && '<span>★ Favorito</span>', isBest && '<span class="val">€ Mejor precio nuevo</span>'].filter(Boolean).join('');
+    return `<article class="card car sl ${isFav ? 'fav' : ''} ${isBest && !isFav ? 'val' : ''}" data-k="${esc(s.keys[0] || '')}">
+      ${photo(sp.img, {marca: s.nombre.split(' ')[0], modelo: s.nombre.split(' ').slice(1).join(' ')})}
+      <div class="tag">${tags}</div>
+      <div class="ov"><h4>${esc(s.nombre)}</h4>
+        <div class="big">${eur(headline)}<small>${nv ? 'nuevo Club' : oc ? 'ocasión Club' : ''}${cuota ? ' · Balloon ' + cuota : ''}</small></div>
+        <div class="chips">${specChips(sp)}</div></div>
+      </div>
+      <div class="body"><div class="ver">${esc(s.nota)}</div>${roofHTML(sp)}${rows.join('')}
+        <div class="note"><a href="#evolucion/${encodeURIComponent(s.keys[0] || '')}">📈 Ver evolución de precio →</a></div></div></article>`;
   }).join('');
   $$('#shortlist .sl').forEach(c => c.addEventListener('click', e => { if (e.target.tagName !== 'A' && c.dataset.k) location.hash = 'evolucion/' + encodeURIComponent(c.dataset.k); }));
 
-  $('#otras').innerHTML = D.otras_marcas.map(o => `<div class="card"><h4>${esc(o.coche)}</h4>
-    <div class="price">${eur(o.precio)} <small>${esc(o.tipo)}</small></div>
-    <div class="note">${esc(o.financiacion || '')}</div>
-    <div class="row"><span>Maletero</span><b>${esc(o.maletero || '—')}</b></div>
-    <div class="note">${esc(o.espacio || '')}</div></div>`).join('');
+  $('#otras').innerHTML = D.otras_marcas.map(o => {
+    const sp = /model y/i.test(o.coche) ? D.specs.tesla_y : /sealion 7/i.test(o.coche) ? D.specs.byd_sealion7 : null;
+    const [marca, ...rest] = o.coche.split(' ');
+    return `<article class="card car">${photo(sp && sp.img, {marca, modelo: rest.join(' ')})}
+      <div class="tag"><span class="src">${esc(o.tipo)}</span></div>
+      <div class="ov"><h4>${esc(o.coche)}</h4><div class="big">${eur(o.precio)}</div>
+        <div class="chips">${sp ? specChips(sp) : ''}</div></div></div>
+      <div class="body">${roofHTML(sp)}<div class="note">${esc(o.financiacion || '')}</div>
+      <div class="row"><span>Maletero</span><b>${esc(o.maletero || '—')}</b></div>
+      <div class="note">${esc(o.espacio || '')}</div></div></article>`;
+  }).join('');
 
   const n = D.novedades;
-  const blk = (t, x, withKm) => {
-    if (!x) return `<div class="card"><h4>${t}</h4><div class="note">Solo hay una captura.</div></div>`;
+  const blk = (t, ic, x, withKm) => {
+    if (!x) return `<div class="card"><h4>${ic} ${t}</h4><div class="note">Solo hay una captura.</div></div>`;
     const li = (arr, f) => arr.slice(0, 8).map(f).join('') + (arr.length > 8 ? `<li class="muted">… y ${arr.length - 8} más</li>` : '');
     const total = x.altas.length + x.bajas.length + x.cambios.length;
-    return `<div class="card"><h4>${t}</h4><div class="note">${fdate(x.desde)} → ${fdate(x.hasta)}</div>
+    return `<div class="card"><h4>${ic} ${t}</h4><div class="note">${fdate(x.desde)} → ${fdate(x.hasta)}</div>
+      <div class="chips" style="margin:8px 0">${chip('+' + x.altas.length + ' nuevos', 'free')}${chip('−' + x.bajas.length + ' fuera', 'res')}${chip(x.cambios.length + ' cambios', 'acc')}</div>
       ${total === 0 ? '<div>Sin cambios.</div>' : ''}
       ${x.altas.length ? `<div><b>Nuevos (${x.altas.length})</b><ul>${li(x.altas, a => `<li>${esc(a.marca)} ${esc(a.modelo)} · ${eur(a.precio)}${withKm ? ' · ' + num(a.km) + ' km' : ''}</li>`)}</ul></div>` : ''}
       ${x.bajas.length ? `<div><b>Ya no están (${x.bajas.length})</b><ul>${li(x.bajas, a => `<li>${esc(a.marca)} ${esc(a.modelo)} ${esc(a.version)} · ${eur(a.precio)}${withKm ? ' · ' + num(a.km) + ' km' : ''}</li>`)}</ul></div>` : ''}
       ${x.cambios.length ? `<div><b>Cambios (${x.cambios.length})</b><ul>${li(x.cambios, c => `<li>${esc(c.marca)} ${esc(c.modelo)}: ${c.campo === 'reservado' ? (c.ahora ? 'reservado' : 'liberado') : eur(c.antes) + ' → ' + eur(c.ahora)}</li>`)}</ul></div>` : ''}
     </div>`;
   };
-  $('#novedades').innerHTML = blk('Nuevos Club', n.nuevos) + blk('Ocasión Club', n.ocasion, true) + blk('Spoticar', n.spoticar, true);
+  $('#novedades').innerHTML = blk('Nuevos Club', '🆕', n.nuevos) + blk('Ocasión Club', '🔁', n.ocasion, true) + blk('Spoticar', '🏷️', n.spoticar, true);
 }
 
 /* ------------------------------------------------------------ filtros comunes */
@@ -154,13 +215,18 @@ function setupNuevos() {
 }
 function cardNuevo(x) {
   const b = x.balloon, r = x.renting;
-  return `<div class="card"><h4>${esc(x.marca)} ${esc(x.modelo)}</h4><div class="ver">${esc(x.version)}</div>
-    <div class="chips">${x.ev ? '<span class="chip ev">100 % eléctrico</span>' : `<span class="chip">${esc(x.comb)}</span>`}${x.badges.map(t => `<span class="chip">${esc(t)}</span>`).join('')}</div>
-    <div class="price">${eur(x.precio)} <small>PVP ${eur(x.pvp)}</small></div>
-    <div class="row"><span>Ahorro</span><b>${eur(x.ahorro)} (${num(x.dto, 1)} %)</b></div>
+  const own = x.img, src = own || refImg(x);
+  const cuota = b ? `${eur(b.cuota, 0)}/mes Balloon` : r ? `${eur(r.cuota, 0)}/mes renting` : '';
+  return `<article class="card car lc">${photo(src, x, own ? 'club' : '')}
+    <div class="tag">${x.dto ? `<span class="val">−${num(x.dto, 0)} %</span>` : ''}${!own && src ? '<span class="src">Foto de referencia</span>' : ''}</div>
+    <div class="ov"><h4>${esc(x.marca)} ${esc(x.modelo)}</h4><div class="big">${eur(x.precio)}<small>${cuota}</small></div></div></div>
+    <div class="body"><div class="ver">${esc(x.version)}</div>
+    <div class="chips">${x.ev ? chip('⚡ 100 % eléctrico', 'ev') : chip(esc(x.comb))}${x.badges.map(t => chip(esc(t))).join('')}</div>
+    <div class="row"><span>PVP</span><b>${eur(x.pvp)}</b></div>
+    <div class="row"><span>Ahorro</span><b class="best">${eur(x.ahorro)} (${num(x.dto, 1)} %)</b></div>
     ${b ? `<div class="row"><span>Balloon ${b.cuotas || ''} cuotas</span><b>${eur(b.cuota, 2)}/mes</b></div><div class="note">Entrada ${eur(b.entrada)} · última ${eur(b.final)} · TAE ${num(b.tae, 2)} % · ${num(b.km)} km · hasta ${esc(b.hasta || '—')}</div>` : ''}
     ${r ? `<div class="row"><span>Renting ${r.meses} m / ${num(r.kmano)} km/año</span><b>${eur(r.cuota, 2)}/mes</b></div>` : ''}
-    <div class="note"><a href="#evolucion/${encodeURIComponent(x.k)}">Evolución →</a></div></div>`;
+    <div class="note"><a href="#evolucion/${encodeURIComponent(x.k)}">📈 Evolución →</a></div></div></article>`;
 }
 
 /* ------------------------------------------------------------ OCASIÓN */
@@ -192,16 +258,18 @@ function setupOcasion() {
 }
 function cardOcasion(x) {
   const sp = x.src === 'Spoticar';
-  return `<div class="card"><h4>${esc(x.marca)} ${esc(x.modelo)}</h4><div class="ver">${esc(x.version)}</div>
-    <div class="chips"><span class="chip acc">${x.src}</span>${x.ev ? '<span class="chip ev">100 % eléctrico</span>' : `<span class="chip">${esc(x.comb)}</span>`}
-      ${!sp ? (x.reservado ? '<span class="chip res">Reservado</span>' : '<span class="chip free">Disponible</span>') : ''}${x.color ? `<span class="chip">${esc(x.color)}</span>` : ''}</div>
-    <div class="price">${eur(x.precio)}${sp && x.financiado ? ` <small>financiado ${eur(x.financiado)}</small>` : ''}</div>
-    <div class="row"><span>Km</span><b>${num(x.km)} km</b></div>
-    <div class="row"><span>Matriculación</span><b>${fmonth(x.matric)}</b></div>
+  const src = refImg(x);
+  return `<article class="card car lc">${photo(src, x)}
+    <div class="tag"><span class="src">${x.src}</span>${!sp && x.reservado ? '<span class="resv">Reservado</span>' : ''}${src ? '<span class="src">Foto de referencia</span>' : ''}</div>
+    <div class="ov"><h4>${esc(x.marca)} ${esc(x.modelo)}</h4><div class="big">${eur(x.precio)}<small>${sp && x.cuota ? eur(x.cuota, 0) + '/mes' : ''}</small></div>
+      <div class="chips">${chip('🛣️ ' + num(x.km) + ' km')}${chip('📅 ' + fmonth(x.matric))}${sp && x.soh ? chip('🔋 SOH ' + num(x.soh * 100) + ' %') : ''}</div></div></div>
+    <div class="body"><div class="ver">${esc(x.version)}</div>
+    <div class="chips">${x.ev ? chip('⚡ 100 % eléctrico', 'ev') : chip(esc(x.comb))}
+      ${!sp ? (x.reservado ? chip('Reservado', 'res') : chip('Disponible', 'free')) : ''}${x.color ? chip(esc(x.color)) : ''}</div>
+    ${sp && x.financiado ? `<div class="row"><span>Precio financiado</span><b>${eur(x.financiado)}</b></div>` : ''}
     ${x.cambio ? `<div class="row"><span>Cambio</span><b>${esc(x.cambio)}</b></div>` : ''}
-    ${sp && x.soh ? `<div class="row"><span>Batería (SOH)</span><b>${num(x.soh * 100)} %</b></div>` : ''}
     ${sp && x.cuota ? `<div class="row"><span>Cuota desde</span><b>${eur(x.cuota, 2)}/mes</b></div><div class="note">Entrada ${eur(x.entrada)} · TAE ${num(x.tae, 2)} %${x.garantia ? ' · garantía ' + x.garantia + ' meses' : ''}${x.ubicacion ? ' · ' + esc(x.ubicacion) : ''}</div>` : ''}
-    <div class="note">${sp && x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">Ver anuncio</a> · ` : ''}<a href="#evolucion/${encodeURIComponent(x.k)}">Evolución →</a></div></div>`;
+    <div class="note">${sp && x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">Ver anuncio ↗</a> · ` : ''}<a href="#evolucion/${encodeURIComponent(x.k)}">📈 Evolución →</a></div></div></article>`;
 }
 
 /* ------------------------------------------------------------ EVOLUCIÓN */
@@ -239,20 +307,29 @@ function lineChart(id, datasets, yLabel, extra = {}) {
       responsive: true, maintainAspectRatio: false, parsing: false, interaction: {mode: 'nearest', intersect: false},
       plugins: {legend: {position: 'bottom', labels: {boxWidth: 12, usePointStyle: true}},
         tooltip: {callbacks: {title: it => it.length ? fdate(new Date(it[0].parsed.x).toISOString().slice(0, 10)) : '', label: c => `${c.dataset.label}: ${eur(c.parsed.y, c.parsed.y < 2000 ? 2 : 0)}`}},
-        title: {display: true, text: yLabel}},
-      scales: {x: {type: 'linear', ticks: {callback: v => fts(v), maxTicksLimit: 7}}, y: {ticks: {callback: v => num(v)}}}
+        title: {display: true, text: yLabel, font: {size: 14, weight: '700'}}},
+      scales: {x: {type: 'linear', grid: {display: false}, ticks: {callback: v => fts(v), maxTicksLimit: 7}}, y: {ticks: {callback: v => num(v)}}}
     }, extra)
   });
 }
 function drawEvolucion() {
   const k = $('#ev-model').value; const s = D.series[k] || {};
   const mk = kind => SERIES.filter(x => x[3] === kind && s[x[0]] && s[x[0]].length).map(([id, label, color]) => ({
-    label, borderColor: color, backgroundColor: color, pointRadius: 3.5, pointHoverRadius: 6, tension: 0, spanGaps: true,
+    label, borderColor: color, backgroundColor: color + '33', fill: false, pointRadius: 4, pointHoverRadius: 7, borderWidth: 2.5, tension: .25, spanGaps: true,
     borderDash: id.startsWith('correo') ? [5, 4] : [], showLine: s[id].length > 1,
     data: s[id].map(([d, v]) => ({x: tsd(d), y: v}))
   }));
   const name = D.modelos[k] ? D.modelos[k].nombre : '';
   const p = mk('precio'), c = mk('cuota');
+  const last = id => s[id] && s[id].length ? s[id][s[id].length - 1] : null;
+  const first = id => s[id] && s[id].length ? s[id][0] : null;
+  const tile = (l, id, dec = 0, suf = '') => { const a = first(id), z = last(id); if (!z) return '';
+    const d = a && a !== z ? z[1] - a[1] : null;
+    return `<div class="kpi ${d === null ? '' : d <= 0 ? 'ok' : 'warn'}"><div class="l">${l}</div><div class="v">${eur(z[1], dec)}${suf}</div><div class="note">${fdate(z[0])}${d === null ? '' : ` · ${d <= 0 ? '▼' : '▲'} ${eur(Math.abs(d), dec)} desde ${fdate(a[0])}`}</div></div>`; };
+  const shortSp = D.shortlist.find(x => x.keys.includes(k));
+  const img = shortSp && shortSp.spec ? shortSp.spec.img : refImg({marca: name.split(' ')[0], modelo: name.split(' ').slice(1).join(' '), ev: D.modelos[k] && D.modelos[k].ev});
+  $('#ev-kpis').innerHTML = (img ? `<div class="kpi" style="padding:0;min-height:96px;background:url('${esc(img)}') center/cover"></div>` : '') +
+    tile('Club nuevo (mín.)', 'web_nuevo') + tile('Club ocasión (mín.)', 'web_ocasion') + tile('Spoticar (mín.)', 'web_spoticar') + tile('Correo contado', 'correo_contado') + tile('Balloon web', 'web_balloon', 2, '/mes') || '<p class="muted">Sin datos para este modelo.</p>';
   lineChart('ch-precio', p, `${name}: precio (€)` + (p.length ? '' : ' — sin datos'));
   lineChart('ch-cuota', c, `${name}: cuota mensual (€/mes)` + (c.length ? '' : ' — sin datos'));
   const rows = D.correos.filter(x => x.k === k);
@@ -313,11 +390,13 @@ function showPriv(P) {
   const t3 = r.tramos.find(t => t.precio_km > 0);
   const penal = km => km <= 26000 ? 0 : (km - r.km_contratados) * t3.precio_km * (1 + r.iva);
   const pctUsed = Math.min(100, (r.odometro.km / 26000) * 100);
+  const KMMAX = Math.max(28000, Math.ceil((pr.fin + 1000) / 1000) * 1000);
+  const pctOf = km => Math.min(100, Math.max(0, km / KMMAX * 100));
   const hoy = new Date(); const fin = new Date(r.fecha_devolucion + 'T12:00:00');
   const mesesQ = Math.max(0, (fin - hoy) / (1000 * 3600 * 24 * 30.44));
   el.innerHTML = `
   <button class="lockbtn" id="lockbtn">Bloquear</button>
-  <h2>🔒 Mi renting actual</h2>
+  <h2>🚘 Mi renting actual</h2>
   <div class="kpis">
     <div class="kpi"><div class="l">Coche</div><div class="v">${esc(r.coche)}</div><div class="note">${esc(r.matricula)} · contrato ${esc(r.contrato)}</div></div>
     <div class="kpi"><div class="l">Cuota</div><div class="v">${eur(r.cuota_mes, 2)}/mes</div></div>
@@ -326,8 +405,17 @@ function showPriv(P) {
     <div class="kpi"><div class="l">Cuentakilómetros</div><div class="v">${num(r.odometro.km)} km</div><div class="note">a ${fdate(r.odometro.fecha)}</div></div>
     <div class="kpi ${pr.fin <= 26000 ? 'ok' : 'warn'}"><div class="l">Proyección al devolver</div><div class="v">≈${num(Math.round(pr.fin / 100) * 100)} km</div><div class="note">margen ≈${num(Math.round(pr.margen / 100) * 100)} km hasta 26.000 · penalización ${eur(penal(pr.fin))}</div></div>
   </div>
-  <div class="box"><b>Tramos de km adicionales</b>
-    <div class="bar"><i style="width:${pctUsed}%"></i></div><div class="note">Llevas ${num(r.odometro.km)} de 26.000 km sin coste (${num(pctUsed)} %).</div>
+  <div class="box"><b>Kilómetros: dónde estás y dónde acabarías</b>
+    <div class="kmbar" style="margin-left:4px;margin-right:4px">
+      <div class="proj" style="left:${pctOf(r.odometro.km)}%;width:${Math.max(0, pctOf(pr.fin) - pctOf(r.odometro.km))}%"></div>
+      <div class="fill" style="width:${pctOf(r.odometro.km)}%"></div>
+      <div class="mk low" style="left:${pctOf(r.km_contratados)}%"><span>${num(r.km_contratados)} contratados</span></div>
+      <div class="mk bad" style="left:${pctOf(26000)}%"><span>26.000 → se paga</span></div>
+      <div class="mk" style="left:${pctOf(pr.fin)}%;background:var(--warn)"></div>
+    </div>
+    <div class="legend"><span><i style="background:linear-gradient(90deg,var(--ok),var(--acc))"></i>Hecho: ${num(r.odometro.km)} km (${fdate(r.odometro.fecha)})</span><span><i style="background:var(--warn)"></i>Previsto al devolver: ≈${num(Math.round(pr.fin / 100) * 100)} km</span><span><i style="background:var(--bad)"></i>Desde 26.000 km se paga todo el exceso</span></div>
+    <div class="note">Llevas ${num(r.odometro.km)} de 26.000 km sin coste (${num(pctUsed)} %).</div>
+    <b>Tramos de km adicionales</b>
     <ul>${r.tramos.map(t => `<li><b>${esc(t.nombre)}:</b> ${esc(t.texto)}</li>`).join('')}</ul>
     <div class="note">Ejemplo: pasar de 26.000 km por 1 km ya cuesta ≈${eur(penal(26001))} (IVA incl.). Con 26.500 km serían ≈${eur(penal(26500))}.</div>
     <p>${esc(r.anexo_30k)}</p>
@@ -372,10 +460,10 @@ function showPriv(P) {
   charts['ch-km'] = new Chart($('#ch-km'), {
     type: 'line',
     data: {datasets: [
-      {label: 'Proyección', data: P2(pr.puntos), borderColor: '#0b6bcb', backgroundColor: '#0b6bcb', pointRadius: 2, tension: .2, borderWidth: 2.5},
+      {label: 'Proyección', data: P2(pr.puntos), borderColor: '#4f8cff', backgroundColor: 'rgba(79,140,255,.18)', fill: 'origin', pointRadius: 2, tension: .25, borderWidth: 3},
       {label: 'Máximo para no pasar de 26.000', data: P2(pr.maximo_seguro), borderColor: '#e8590c', borderDash: [5, 4], pointRadius: 0, borderWidth: 1.5},
       {label: 'Puntos de control', data: pr.hitos.map(h => ({x: tsd(h.fecha), y: h.control})), borderColor: '#7c3aed', backgroundColor: '#7c3aed', showLine: false, pointRadius: 6, pointStyle: 'rectRot'},
-      {label: 'Hoy (cuentakilómetros)', data: [{x: tsd(r.odometro.fecha), y: r.odometro.km}], borderColor: '#111', backgroundColor: '#111', showLine: false, pointRadius: 6},
+      {label: 'Hoy (cuentakilómetros)', data: [{x: tsd(r.odometro.fecha), y: r.odometro.km}], borderColor: '#22c55e', backgroundColor: '#22c55e', showLine: false, pointRadius: 6},
       flat(20000, '20.000 contratados', '#868e96', [2, 3]), flat(26000, '26.000 (desde aquí se paga)', '#b42318', []),
     ]},
     options: {responsive: true, maintainAspectRatio: false, parsing: false,

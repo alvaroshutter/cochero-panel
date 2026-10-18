@@ -6,6 +6,9 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <title>Panel de coches · búsqueda de eléctrico familiar</title>
+<meta name="theme-color" content="#0b0f17">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚗</text></svg>">
 </head>
@@ -20,6 +23,7 @@
       <a href="#evolucion" data-tab="evolucion">Evolución</a>
       <a href="#privado" data-tab="privado">🔒 Privado</a>
     </nav>
+    <button class="themebtn" id="themebtn" title="Modo claro/oscuro" aria-label="Cambiar tema">◐</button>
   </div>
 </header>
 
@@ -28,14 +32,17 @@
 
   <!-- INICIO -->
   <section id="tab-inicio" class="tab" hidden>
-    <div class="updated" id="updated"></div>
-    <h2>Candidatos: eléctrico familiar</h2>
-    <p class="muted small">Mejor precio actual de cada modelo en el Club (nuevo y ocasión), Spoticar y Carwow. Toca un modelo para ver su evolución.</p>
+    <div class="hero">
+      <h1>Tu próximo eléctrico familiar</h1>
+      <p>Mejor precio actual de cada candidato en el Club (nuevo y ocasión), Spoticar y Carwow. Toca un coche para ver su evolución.</p>
+      <div class="updated" id="updated"></div>
+    </div>
+    <h2>Candidatos</h2>
     <div id="shortlist" class="grid cards3"></div>
-    <h3>Para comparar: Tesla y BYD</h3>
+    <h2>Para comparar: Tesla y BYD</h2>
     <div id="otras" class="grid cards3"></div>
-    <h3>Novedades desde la captura anterior</h3>
-    <div id="novedades" class="grid cards3"></div>
+    <h2>Novedades desde la captura anterior</h2>
+    <div id="novedades" class="grid cards3 nov"></div>
   </section>
 
   <!-- NUEVOS -->
@@ -98,6 +105,7 @@
       <label class="toggle"><input type="checkbox" id="ev-onlyev" checked> Solo eléctricos en la lista</label>
     </div>
     <p class="muted small">Puntos de las capturas de la web del Club (nuevo y ocasión, precio mínimo), Spoticar y de las ofertas recibidas por correo del Club. En cuotas: Balloon y renting publicados.</p>
+    <div class="kpis" id="ev-kpis"></div>
     <div class="chartbox"><canvas id="ch-precio"></canvas></div>
     <div class="chartbox"><canvas id="ch-cuota"></canvas></div>
     <h3>Ofertas por correo de este modelo</h3>
@@ -107,7 +115,7 @@
   <!-- PRIVADO -->
   <section id="tab-privado" class="tab" hidden>
     <div id="lock" class="lock">
-      <h2>🔒 Zona privada</h2>
+      <div class="ic">🔐</div><h2>Zona privada</h2>
       <p class="muted">El renting, el presupuesto y la financiación están cifrados (AES-256-GCM). Se descifran solo en este navegador con la contraseña.</p>
       <form id="pwform" autocomplete="off">
         <input type="password" id="pw" placeholder="Contraseña" autocomplete="current-password" required>
@@ -119,7 +127,8 @@
     <div id="priv" hidden></div>
   </section>
 </main>
-<footer class="wrap muted small">Datos de mercado recopilados de la web del Stellantis Club, Spoticar, Carwow, Tesla y BYD. Precios orientativos; confirma siempre con el concesionario. <span id="gen"></span></footer>
+<footer class="wrap muted small">Datos de mercado recopilados de la web del Stellantis Club, Spoticar, Carwow, Tesla y BYD. Precios orientativos; confirma siempre con el concesionario. <span id="gen"></span>
+<details><summary>Créditos de las fotos</summary><ul><li>Peugeot E-5008: <a href="https://commons.wikimedia.org/wiki/File:Peugeot_e-5008_Automesse_Ludwigsburg_2025_DSC_2651_(cropped).jpg" target="_blank" rel="noopener">Alexander Migl</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener">CC BY-SA 4.0</a> (Wikimedia Commons, redimensionada)</li><li>Peugeot E-3008: <a href="https://commons.wikimedia.org/wiki/File:Peugeot_e-3008_Automesse_Ludwigsburg_2024_IMG_1537.jpg" target="_blank" rel="noopener">Alexander-93</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener">CC BY-SA 4.0</a> (Wikimedia Commons, redimensionada)</li><li>Peugeot 408 (misma carrocería que el E-408): <a href="https://commons.wikimedia.org/wiki/File:2023_Peugeot_408_GT_PureTech_e-Hybrid_(Front).jpg" target="_blank" rel="noopener">MoCars</a>, <a href="http://creativecommons.org/publicdomain/zero/1.0/deed.en" target="_blank" rel="noopener">CC0</a> (Wikimedia Commons, redimensionada)</li><li>Citroën ë-C5 Aircross: <a href="https://commons.wikimedia.org/wiki/File:Citro%C3%ABn_%C3%AB-C5_Aircross_Auto_Zuerich_2025_DSC_2991.jpg" target="_blank" rel="noopener">Alexander Migl</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener">CC BY-SA 4.0</a> (Wikimedia Commons, redimensionada)</li><li>Opel Grandland Electric: <a href="https://commons.wikimedia.org/wiki/File:Opel_Grandland_Electric_GS_(B)_%E2%80%93_f_19072025.jpg" target="_blank" rel="noopener">© M 93</a>, <a href="https://creativecommons.org/licenses/by-sa/3.0/de/deed.en" target="_blank" rel="noopener">CC BY-SA 3.0 de</a> (Wikimedia Commons, redimensionada)</li><li>Leapmotor C10: <a href="https://commons.wikimedia.org/wiki/File:Leapmotor_C10_EV_DSC_8756.jpg" target="_blank" rel="noopener">Alexander Migl</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener">CC BY-SA 4.0</a> (Wikimedia Commons, redimensionada)</li><li>Tesla Model Y: <a href="https://commons.wikimedia.org/wiki/File:Tesla_Model_Y_Juniper_Washington_DC_Metro_Area,_USA.jpg" target="_blank" rel="noopener">OWS Photography</a>, <a href="https://creativecommons.org/licenses/by/4.0" target="_blank" rel="noopener">CC BY 4.0</a> (Wikimedia Commons, redimensionada)</li><li>BYD Sealion 7: <a href="https://commons.wikimedia.org/wiki/File:BYD_Sealion_7_Classic-Gala_2025_DSC_0775.jpg" target="_blank" rel="noopener">Alexander-93</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener">CC BY-SA 4.0</a> (Wikimedia Commons, redimensionada)</li></ul><p>Las miniaturas de las ofertas nuevas son las imágenes del configurador del Stellantis Club, enlazadas desde su web.</p></details></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" integrity="sha384-NrKB+u6Ts6AtkIhwPixiKTzgSKNblyhlk0Sohlgar9UHUBzai/sgnNNWWd291xqt" crossorigin="anonymous"></script>
 <script src="app.js"></script>
