@@ -155,3 +155,15 @@ footer details{margin-top:8px}
 
 .avisos{display:flex;flex-direction:column;gap:6px;margin-top:8px;width:100%}
 .aviso{font-size:.85rem;padding:8px 12px;border-radius:10px;background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.45);color:var(--fg,inherit)}
+
+/* Tesla ocasión */
+.tesla-vo{margin-top:34px;padding-top:8px;border-top:1px solid var(--line)}
+.jump{cursor:pointer;margin:10px 0 0 6px}
+.tdet{margin:10px 0;padding:12px 16px}.tdet summary{cursor:pointer}
+.tdet ul{margin:8px 0 0;padding-left:18px}.tdet li{margin:5px 0;font-size:.9rem}
+.tbl td.best,.tbl b.best{color:var(--ok)}
+.chip.warn{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 35%,transparent);background:color-mix(in srgb,var(--warn) 12%,transparent)}
+.tsum{margin-top:14px}
+.tsum .mini{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-top:10px}
+.tsum .mini a{display:block;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--card2);color:var(--txt);text-decoration:none;font-size:.86rem}
+.tsum .mini a b{display:block;font-size:1.05rem}

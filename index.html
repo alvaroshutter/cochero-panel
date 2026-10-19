@@ -41,6 +41,7 @@
     <div id="shortlist" class="grid cards3"></div>
     <h2>Para comparar: Tesla y BYD</h2>
     <div id="otras" class="grid cards3"></div>
+    <div id="tesla-resumen"></div>
     <h2>Novedades desde la captura anterior</h2>
     <div id="novedades" class="grid cards3 nov"></div>
   </section>
@@ -76,6 +77,8 @@
       <button data-src="spoticar">Spoticar empleados</button>
       <button data-src="todos">Todos</button>
     </div>
+    <a class="chip acc jump" id="go-tesla" role="button" tabindex="0">⚡ Ir a Tesla de ocasión ↓</a>
+    <div class="ocwrap">
     <div class="filters" id="f-ocasion">
       <input type="search" data-f="q" placeholder="Buscar modelo, versión o color…">
       <select data-f="marca"><option value="">Todas las marcas</option></select>
@@ -95,6 +98,38 @@
     <p class="count" id="c-ocasion"></p>
     <div id="l-ocasion" class="grid cards"></div>
     <button class="more" id="m-ocasion" hidden>Ver más</button>
+    </div>
+
+    <div id="tesla-vo" class="tesla-vo">
+      <h2>⚡ Tesla ocasión</h2>
+      <p class="muted small">Model Y (y Model 3 de referencia) de segunda mano en España: coches.net, AutoScout24, coches.com, Flexicar, OcasionPlus y Wallapop. Cada tarjeta enlaza al anuncio original. Los repetidos en varias webs se muestran una vez.</p>
+      <div id="t-head"></div>
+      <div class="kpis" id="t-kpis"></div>
+      <details class="card tdet" open><summary><b>Precios por año y versión</b></summary><div class="tablewrap"><table id="t-rangos" class="tbl"></table></div></details>
+      <details class="card tdet"><summary><b>Comparación con el nuevo y con el Club · cuota ilustrativa</b></summary><div id="t-comp"></div></details>
+      <details class="card tdet"><summary><b>Qué mirar antes de comprar un Tesla usado</b></summary><div id="t-tips"></div></details>
+      <div class="filters" id="f-tesla">
+        <input type="search" data-f="q" placeholder="Buscar versión, vendedor o lugar…">
+        <select data-f="modelo"><option value="">Model Y y Model 3</option></select>
+        <select data-f="version"><option value="">Todas las versiones</option></select>
+        <select data-f="gen"><option value="">Todas las generaciones</option></select>
+        <select data-f="fuente"><option value="">Todas las webs</option></select>
+        <select data-f="vendedor"><option value="">Profesional o particular</option></select>
+        <label class="toggle"><input type="checkbox" data-f="bat"> Garantía de batería vigente</label>
+        <label class="num">Precio máx. <input type="number" data-f="pmax" inputmode="numeric" step="1000" placeholder="∞"></label>
+        <label class="num">Km máx. <input type="number" data-f="kmax" inputmode="numeric" step="5000" placeholder="∞"></label>
+        <label class="num">Año desde <input type="number" data-f="amin" inputmode="numeric" min="2018" max="2030" placeholder="—"></label>
+        <select data-f="orden">
+          <option value="precio">Más baratos primero</option>
+          <option value="-precio">Más caros primero</option>
+          <option value="km">Menos km primero</option>
+          <option value="-matric">Más recientes primero</option>
+        </select>
+      </div>
+      <p class="count" id="c-tesla"></p>
+      <div id="l-tesla" class="grid cards"></div>
+      <button class="more" id="m-tesla" hidden>Ver más</button>
+    </div>
   </section>
 
   <!-- EVOLUCION -->
@@ -127,8 +162,8 @@
     <div id="priv" hidden></div>
   </section>
 </main>
-<footer class="wrap muted small">Datos de mercado recopilados de la web del Stellantis Club, Spoticar, Carwow, Tesla y BYD. Precios orientativos; confirma siempre con el concesionario. <span id="gen"></span>
-<details><summary>Créditos de las fotos</summary><ul><li>Peugeot E-5008: <a href="https://commons.wikimedia.org/wiki/File:Peugeot_e-5008_Automesse_Ludwigsburg_2025_DSC_2651_(cropped).jpg" target="_blank" rel="noopener">Alexander Migl</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener">CC BY-SA 4.0</a> (Wikimedia Commons, redimensionada)</li><li>Peugeot E-3008: <a href="https://commons.wikimedia.org/wiki/File:Peugeot_e-3008_Automesse_Ludwigsburg_2024_IMG_1537.jpg" target="_blank" rel="noopener">Alexander-93</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener">CC BY-SA 4.0</a> (Wikimedia Commons, redimensionada)</li><li>Peugeot 408 (misma carrocería que el E-408): <a href="https://commons.wikimedia.org/wiki/File:2023_Peugeot_408_GT_PureTech_e-Hybrid_(Front).jpg" target="_blank" rel="noopener">MoCars</a>, <a href="http://creativecommons.org/publicdomain/zero/1.0/deed.en" target="_blank" rel="noopener">CC0</a> (Wikimedia Commons, redimensionada)</li><li>Citroën ë-C5 Aircross: <a href="https://commons.wikimedia.org/wiki/File:Citro%C3%ABn_%C3%AB-C5_Aircross_Auto_Zuerich_2025_DSC_2991.jpg" target="_blank" rel="noopener">Alexander Migl</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener">CC BY-SA 4.0</a> (Wikimedia Commons, redimensionada)</li><li>Opel Grandland Electric: <a href="https://commons.wikimedia.org/wiki/File:Opel_Grandland_Electric_GS_(B)_%E2%80%93_f_19072025.jpg" target="_blank" rel="noopener">© M 93</a>, <a href="https://creativecommons.org/licenses/by-sa/3.0/de/deed.en" target="_blank" rel="noopener">CC BY-SA 3.0 de</a> (Wikimedia Commons, redimensionada)</li><li>Leapmotor C10: <a href="https://commons.wikimedia.org/wiki/File:Leapmotor_C10_EV_DSC_8756.jpg" target="_blank" rel="noopener">Alexander Migl</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener">CC BY-SA 4.0</a> (Wikimedia Commons, redimensionada)</li><li>Tesla Model Y: <a href="https://commons.wikimedia.org/wiki/File:Tesla_Model_Y_Juniper_Washington_DC_Metro_Area,_USA.jpg" target="_blank" rel="noopener">OWS Photography</a>, <a href="https://creativecommons.org/licenses/by/4.0" target="_blank" rel="noopener">CC BY 4.0</a> (Wikimedia Commons, redimensionada)</li><li>BYD Sealion 7: <a href="https://commons.wikimedia.org/wiki/File:BYD_Sealion_7_Classic-Gala_2025_DSC_0775.jpg" target="_blank" rel="noopener">Alexander-93</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener">CC BY-SA 4.0</a> (Wikimedia Commons, redimensionada)</li></ul><p>Las miniaturas de las ofertas nuevas son las imágenes del configurador del Stellantis Club, enlazadas desde su web.</p></details></footer>
+<footer class="wrap muted small">Datos de mercado recopilados de la web del Stellantis Club, Spoticar, Carwow, Tesla y BYD, y de anuncios públicos de Tesla de ocasión (coches.net, AutoScout24, coches.com, Flexicar, OcasionPlus, Wallapop). Precios orientativos; confirma siempre con el concesionario. <span id="gen"></span>
+<details><summary>Créditos de las fotos</summary><ul><li>Peugeot E-5008: <a href="https://commons.wikimedia.org/wiki/File:Peugeot_e-5008_Automesse_Ludwigsburg_2025_DSC_2651_(cropped).jpg" target="_blank" rel="noopener">Alexander Migl</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener">CC BY-SA 4.0</a> (Wikimedia Commons, redimensionada)</li><li>Peugeot E-3008: <a href="https://commons.wikimedia.org/wiki/File:Peugeot_e-3008_Automesse_Ludwigsburg_2024_IMG_1537.jpg" target="_blank" rel="noopener">Alexander-93</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener">CC BY-SA 4.0</a> (Wikimedia Commons, redimensionada)</li><li>Peugeot 408 (misma carrocería que el E-408): <a href="https://commons.wikimedia.org/wiki/File:2023_Peugeot_408_GT_PureTech_e-Hybrid_(Front).jpg" target="_blank" rel="noopener">MoCars</a>, <a href="http://creativecommons.org/publicdomain/zero/1.0/deed.en" target="_blank" rel="noopener">CC0</a> (Wikimedia Commons, redimensionada)</li><li>Citroën ë-C5 Aircross: <a href="https://commons.wikimedia.org/wiki/File:Citro%C3%ABn_%C3%AB-C5_Aircross_Auto_Zuerich_2025_DSC_2991.jpg" target="_blank" rel="noopener">Alexander Migl</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener">CC BY-SA 4.0</a> (Wikimedia Commons, redimensionada)</li><li>Opel Grandland Electric: <a href="https://commons.wikimedia.org/wiki/File:Opel_Grandland_Electric_GS_(B)_%E2%80%93_f_19072025.jpg" target="_blank" rel="noopener">© M 93</a>, <a href="https://creativecommons.org/licenses/by-sa/3.0/de/deed.en" target="_blank" rel="noopener">CC BY-SA 3.0 de</a> (Wikimedia Commons, redimensionada)</li><li>Leapmotor C10: <a href="https://commons.wikimedia.org/wiki/File:Leapmotor_C10_EV_DSC_8756.jpg" target="_blank" rel="noopener">Alexander Migl</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener">CC BY-SA 4.0</a> (Wikimedia Commons, redimensionada)</li><li>Tesla Model Y: <a href="https://commons.wikimedia.org/wiki/File:Tesla_Model_Y_Juniper_Washington_DC_Metro_Area,_USA.jpg" target="_blank" rel="noopener">OWS Photography</a>, <a href="https://creativecommons.org/licenses/by/4.0" target="_blank" rel="noopener">CC BY 4.0</a> (Wikimedia Commons, redimensionada)</li><li>BYD Sealion 7: <a href="https://commons.wikimedia.org/wiki/File:BYD_Sealion_7_Classic-Gala_2025_DSC_0775.jpg" target="_blank" rel="noopener">Alexander-93</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener">CC BY-SA 4.0</a> (Wikimedia Commons, redimensionada)</li></ul><p>Las miniaturas de las ofertas nuevas son las imágenes del configurador del Stellantis Club, enlazadas desde su web. Las fotos de Tesla de ocasión son las del propio anuncio, enlazadas desde cada portal.</p></details></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" integrity="sha384-NrKB+u6Ts6AtkIhwPixiKTzgSKNblyhlk0Sohlgar9UHUBzai/sgnNNWWd291xqt" crossorigin="anonymous"></script>
 <script src="app.js"></script>

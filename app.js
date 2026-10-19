@@ -43,7 +43,7 @@ async function init() {
   } catch (e) { $('#loading').textContent = 'No se han podido cargar los datos.'; return; }
   $('#loading').remove();
   $('#gen').textContent = `Generado el ${fdate(D.generado)} a las ${D.generado.slice(11, 16)} (hora de Madrid).`;
-  setupTheme(); renderInicio(); setupNuevos(); setupOcasion(); setupEvolucion(); setupPrivado();
+  setupTheme(); renderInicio(); setupNuevos(); setupOcasion(); setupTesla(); setupEvolucion(); setupPrivado();
   window.addEventListener('hashchange', route); route();
 }
 
@@ -95,8 +95,8 @@ function renderInicio() {
   const f = D.fechas;
   $('#updated').innerHTML = [
     ['Club nuevos', f.club_nuevos], ['Club ocasión', f.club_ocasion], ['Spoticar', f.spoticar],
-    ['Último correo', f.correos], ['Carwow/Tesla/BYD', f.carwow_tesla_byd]
-  ].map(([l, d]) => `<span class="chip acc">${esc(l)}: <b>datos del ${fdate(d)}</b></span>`).join('') + avisosHTML();
+    ['Último correo', f.correos], ['Carwow/Tesla/BYD', f.carwow_tesla_byd], ['Tesla ocasión', f.tesla_ocasion]
+  ].filter(([l, d]) => d).map(([l, d]) => `<span class="chip acc">${esc(l)}: <b>datos del ${fdate(d)}</b></span>`).join('') + avisosHTML();
 
   // mejor precio: el nuevo Club más barato entre los candidatos
   const withNew = D.shortlist.filter(s => s.nuevo[0] && s.nuevo[0].precio);
@@ -153,6 +153,7 @@ function renderInicio() {
       <div class="note">${esc(o.espacio || '')}</div></div></article>`;
   }).join('');
 
+  renderTeslaResumen();
   const n = D.novedades;
   const blk = (t, ic, x, withKm, avk) => {
     if (!x) return `<div class="card"><h4>${ic} ${t}</h4><div class="note">Solo hay una captura.</div></div>`;
@@ -167,7 +168,7 @@ function renderInicio() {
       ${x.cambios.length ? `<div><b>Cambios (${x.cambios.length})</b><ul>${li(x.cambios, c => `<li>${esc(c.marca)} ${esc(c.modelo)}: ${c.campo === 'reservado' ? (c.ahora ? 'reservado' : 'liberado') : eur(c.antes) + ' → ' + eur(c.ahora)}</li>`)}</ul></div>` : ''}
     </div>`;
   };
-  $('#novedades').innerHTML = blk('Nuevos Club', '🆕', n.nuevos, false, 'club_nuevos') + blk('Ocasión Club', '🔁', n.ocasion, true, 'club_ocasion') + blk('Spoticar', '🏷️', n.spoticar, true, 'spoticar');
+  $('#novedades').innerHTML = blk('Nuevos Club', '🆕', n.nuevos, false, 'club_nuevos') + blk('Ocasión Club', '🔁', n.ocasion, true, 'club_ocasion') + blk('Spoticar', '🏷️', n.spoticar, true, 'spoticar') + (T() ? blk('Tesla ocasión', '⚡', T().novedades, true, 'tesla_ocasion') : '');
 }
 
 /* ------------------------------------------------------------ filtros comunes */
@@ -279,6 +280,108 @@ function cardOcasion(x) {
     ${x.cambio ? `<div class="row"><span>Cambio</span><b>${esc(x.cambio)}</b></div>` : ''}
     ${sp && x.cuota ? `<div class="row"><span>Cuota desde</span><b>${eur(x.cuota, 2)}/mes</b></div><div class="note">Entrada ${eur(x.entrada)} · TAE ${num(x.tae, 2)} %${x.garantia ? ' · garantía ' + x.garantia + ' meses' : ''}${x.ubicacion ? ' · ' + esc(x.ubicacion) : ''}</div>` : ''}
     <div class="note">${sp && x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">Ver anuncio ↗</a> · ` : ''}<a href="#evolucion/${encodeURIComponent(x.k)}">📈 Evolución →</a></div></div></article>`;
+}
+
+/* ------------------------------------------------------------ TESLA OCASIÓN */
+const T = () => D && D.tesla_ocasion;
+const TIPS = [
+  '<b>Garantía de batería y motor de Tesla:</b> 8 años desde la 1.ª matriculación o 160.000 km (RWD) / 192.000 km (Gran autonomía y Performance), con al menos 70 % de capacidad. La básica es de 4 años o 80.000 km. Cada tarjeta indica hasta cuándo dura (calculado con la fecha del anuncio; si solo pone el año, es aproximado).',
+  '<b>Pide un informe del estado de la batería</b> (SOH): en un taller Tesla o con una herramienta de diagnóstico. Desconfía de un coche con mucha menos autonomía de la normal al 100 %.',
+  '<b>Ex-VTC, ex-renting o ex-flota:</b> muchos Model Y/3 baratos con más de 100.000 km vienen de VTC o renting. Mira el historial de mantenimiento y el informe de la DGT (cargas, titulares, ITV).',
+  '<b>Pre-restyling vs Juniper:</b> todos los Model Y llevan techo de cristal completo. El Juniper (desde 2025) es más silencioso, con suspensión más cómoda, y, según versión, asientos ventilados y pantalla trasera para los niños. Hoy un Juniper usado cuesta casi lo mismo que uno nuevo.',
+  '<b>Revisa en persona:</b> holguras y ruidos de suspensión delantera (brazos de control), ajustes de carrocería, estado de las llantas, cristal del techo sin golpes y que la bomba de calor y el cargador funcionan.',
+  '<b>Transferencia en la app de Tesla:</b> el vendedor debe quitar el coche de su cuenta. Comprueba qué funciones van con el coche (Conectividad Premium, Autopilot mejorado o FSD) y cuáles se pierden.',
+  '<b>Particular o profesional:</b> de un particular pagas ITP (impuesto autonómico de transmisiones) y no hay garantía legal de compraventa. Un profesional te da al menos 1 año de garantía y la factura con IVA.',
+  '<b>Ojo con los chollos:</b> precios muy por debajo de la mediana, prisas o pago por adelantado sin ver el coche son señales típicas de fraude, sobre todo en Wallapop y Milanuncios.',
+  '<b>Precio “financiado”:</b> Flexicar, OcasionPlus y coches.com anuncian un precio más bajo si financias con ellos. Aquí se usa siempre el precio <b>al contado</b>, y el financiado aparece aparte.',
+];
+function setupTesla() {
+  const t = T(); const sec = $('#tesla-vo');
+  $('#go-tesla').onclick = () => sec.scrollIntoView({behavior: 'smooth'});
+  if (!t || !t.items || !t.items.length) { sec.innerHTML = '<h2>⚡ Tesla ocasión</h2><p class="muted">Todavía no hay captura de Tesla de ocasión.</p>'; return; }
+  const r = t.resumen;
+  const blq = Object.entries(t.bloqueadas || {}).map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join('');
+  $('#t-head').innerHTML = `<div class="chips">${chip(`Datos del <b>${fdate(t.fecha)}</b>`, 'acc')}${Object.entries(t.fuentes || {}).map(([k, v]) => chip(`${esc(k)}: ${v}`)).join('')}</div>` +
+    avisosHTML(['tesla_ocasion']) + (blq ? `<details class="note"><summary>Fuentes bloqueadas o incompletas</summary><ul>${blq}</ul></details>` : '');
+  const kpi = (l, v, n, cls = '') => `<div class="kpi ${cls}"><div class="l">${l}</div><div class="v">${v}</div><div class="note">${n}</div></div>`;
+  $('#t-kpis').innerHTML =
+    kpi('Model Y en venta', num(r.n_y), `sin repetidos · ${num(r.n_3)} Model 3`) +
+    kpi('Model Y más barato', eur(r.y_min), `más caro ${eur(r.y_max)}`) +
+    kpi('RWD 2023 (mediana)', eur(r.y_rwd_2023_mediana), `${r.n_rwd_2023} anuncios`, 'ok') +
+    kpi('RWD 2024 (mediana)', eur(r.y_rwd_2024_mediana), `${r.n_rwd_2024} anuncios`) +
+    kpi('Juniper usado desde', eur(r.y_juniper_min), `${r.y_juniper} anuncios · nuevo RWD ${eur(t.nuevo_ref.precio)}`, 'warn');
+  const rows = t.rangos.filter(x => x.n);
+  $('#t-rangos').innerHTML = `<thead><tr><th>Modelo</th><th>Año</th><th>Versión</th><th>Anuncios</th><th>Mín.</th><th>Mediana</th><th>Máx.</th><th>Km (mediana)</th></tr></thead><tbody>` +
+    rows.map(x => `<tr><td>${esc(x.modelo)}</td><td>${x.anio}</td><td>${esc(x.version)}</td><td class="n">${x.n}</td><td class="n best">${eur(x.min)}</td><td class="n"><b>${eur(x.mediana)}</b></td><td class="n">${eur(x.max)}</td><td class="n">${num(x.km_mediana)}</td></tr>`).join('') + '</tbody>';
+  const tin = num(t.tin_ilustrativo * 100, 2);
+  const best = r.mejores.map(id => t.items.find(x => x.id === id)).filter(Boolean);
+  const refRows = [...best.slice(0, 3).map(x => ({coche: `Model Y ${x.version} ${x.anio} · ${num(x.km)} km (${x.fuente})`, precio: x.precio, url: x.url}))]
+    .concat(t.refs).map(x => ({...x, cuota: x.cuota || cuotaIl(x.precio, t)}));
+  $('#t-comp').innerHTML = `<p class="note">⚠️ <b>Estimación ilustrativa</b>, no es una oferta: cuota de un préstamo del 100 % del precio al ${tin} % TIN a ${t.meses_ilustrativo} meses (tipo de la financiación del Club), sin entrada, sin comisiones ni seguro. Sirve solo para comparar.</p>
+    <div class="tablewrap"><table class="tbl"><thead><tr><th>Coche</th><th>Precio contado</th><th>Cuota ilustrativa</th><th>vs Model Y nuevo</th></tr></thead><tbody>` +
+    refRows.map(x => `<tr><td>${x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.coche)} ↗</a>` : esc(x.coche)}</td><td class="n">${eur(x.precio)}</td><td class="n">${eur(x.cuota)}/mes</td><td class="n">${x.precio && x.precio !== t.nuevo_ref.precio ? (x.precio < t.nuevo_ref.precio ? '−' : '+') + eur(Math.abs(x.precio - t.nuevo_ref.precio)) : '—'}</td></tr>`).join('') +
+    `</tbody></table></div><p class="note">Con este préstamo ilustrativo, una cuota de 300 €/mes da para unos ${eur(r.cuota_300_capital)} financiados (250 €/mes → ${eur(r.cuota_250_capital)}). El Model Y usado “bueno” más barato (2023 o más nuevo, &lt; 60.000 km, garantía de batería vigente) cuesta ${best[0] ? num(best[0].precio / r.cuota_300_capital, 1) : '—'} veces eso, así que harían falta unos ${eur(Math.max(0, (best[0] ? best[0].precio : 0) - r.cuota_300_capital))} de entrada para quedarse en 300 €/mes.</p>
+    <p class="note">${esc(t.nuevo_ref.nota)}</p>`;
+  $('#t-tips').innerHTML = `<ul>${TIPS.map(x => `<li>${x}</li>`).join('')}</ul>`;
+
+  const box = $('#f-tesla');
+  fillSelect($('[data-f=modelo]', box), uniq(t.items.map(x => x.modelo)));
+  fillSelect($('[data-f=version]', box), uniq(t.items.map(x => x.version)));
+  fillSelect($('[data-f=gen]', box), uniq(t.items.map(x => x.gen)));
+  fillSelect($('[data-f=fuente]', box), uniq(t.items.map(x => x.fuente)));
+  fillSelect($('[data-f=vendedor]', box), uniq(t.items.map(x => x.vendedor)));
+  if (!localStorage.getItem('f-tesla')) { $('[data-f=modelo]', box).value = 'Model Y'; $('[data-f=bat]', box).checked = true; }
+  const save = persist(box, 'tesla');
+  const run = () => {
+    save();
+    const f = readFilters(box); const q = f.q.toLowerCase();
+    let it = t.items.filter(x =>
+      (!f.modelo || x.modelo === f.modelo) && (!f.version || x.version === f.version) && (!f.gen || x.gen === f.gen) &&
+      (!f.fuente || x.fuente === f.fuente || x.tambien_en.some(o => o.fuente === f.fuente)) && (!f.vendedor || x.vendedor === f.vendedor) &&
+      (!f.bat || x.bat_vigente) && (!f.pmax || (x.precio && x.precio <= +f.pmax)) && (!f.kmax || (x.km != null && x.km <= +f.kmax)) &&
+      (!f.amin || (x.anio && x.anio >= +f.amin)) &&
+      (!q || `${x.modelo} ${x.version} ${x.version_anuncio} ${x.vendedor_nombre || ''} ${x.lugar || ''}`.toLowerCase().includes(q)));
+    it.sort(sorter(f.orden || 'precio'));
+    $('#c-tesla').innerHTML = esc(`${it.length} de ${t.items.length} anuncios · datos del ${fdate(t.fecha)}`);
+    paged($('#l-tesla'), $('#m-tesla'), it, cardTesla, 48);
+  };
+  box.addEventListener('input', run); run();
+}
+function cuotaIl(p, t) { if (!p) return null; const r = t.tin_ilustrativo / 12, n = t.meses_ilustrativo; return Math.round(p * r / (1 - Math.pow(1 + r, -n))); }
+function cardTesla(x) {
+  const t = T(); const top = t.resumen.mejores.includes(x.id);
+  const bat = x.bat_vigente === true ? chip(`🔋 Batería en garantía hasta ${x.fecha_aprox ? '~' : ''}${fmonth(x.bat_hasta)}`, 'ev') + (x.bat_km_rest != null ? chip(`o ${num(x.bat_km_rest)} km más`, 'ev') : '')
+    : x.bat_vigente === false ? chip('🔋 Garantía de batería agotada', 'res') : '';
+  const vend = x.vendedor === 'Profesional' ? `🏢 ${esc(x.vendedor_nombre || 'Profesional')}` : x.vendedor === 'Particular' ? '👤 Particular' : '❔ Vendedor sin dato';
+  const otros = x.tambien_en.length ? `<div class="note">También en: ${x.tambien_en.map(o => `<a href="${esc(o.url)}" target="_blank" rel="noopener noreferrer">${esc(o.fuente)}</a>`).join(' · ')}</div>` : '';
+  return `<article class="card car lc">${photo(x.img, {marca: 'Tesla', modelo: x.modelo.replace('Model ', '')})}
+    <div class="tag"><span class="src">${esc(x.fuente)}</span>${top ? '<span class="val">★ Interesante</span>' : ''}${x.reservado ? '<span class="resv">Reservado</span>' : ''}</div>
+    <div class="ov"><h4>Tesla ${esc(x.modelo)}${x.version !== 'Sin dato' ? ' ' + esc(x.version) : ''}</h4><div class="big">${eur(x.precio)}<small>${x.financiado ? 'financiando ' + eur(x.financiado) : 'al contado'}</small></div>
+      <div class="chips">${chip('🛣️ ' + (x.km != null ? num(x.km) + ' km' : 'km sin dato'))}${chip('📅 ' + (x.matric && x.matric.length > 4 ? fmonth(x.matric) : (x.anio || '—')))}${x.gen ? chip(esc(x.gen)) : ''}</div></div></div>
+    <div class="body"><div class="ver">${esc(x.version_anuncio)}</div>
+    <div class="chips">${bat}${x.muy_bajo ? chip('⚠️ Precio muy bajo: verificar', 'warn') : ''}${x.km_altos ? chip('⚠️ Muchos km', 'warn') : ''}</div>
+    <div class="row"><span>${vend}</span><b>${esc(x.lugar || '')}</b></div>
+    ${x.garantia_vendedor ? `<div class="row"><span>Garantía del vendedor</span><b>${x.garantia_vendedor} meses</b></div>` : ''}
+    <div class="row"><span>Cuota ilustrativa*</span><b>${eur(cuotaIl(x.precio, t))}/mes</b></div>
+    <div class="note">* ${num(t.tin_ilustrativo * 100, 2)} % TIN, ${t.meses_ilustrativo} meses, sin entrada. Solo para comparar.</div>
+    ${otros}
+    <div class="note">${x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">Ver anuncio ↗</a>` : ''}</div></div></article>`;
+}
+function renderTeslaResumen() {
+  const t = T(); const el = $('#tesla-resumen'); if (!el) return;
+  if (!t || !t.items || !t.items.length) { el.innerHTML = ''; return; }
+  const r = t.resumen; const best = r.mejores.map(id => t.items.find(x => x.id === id)).filter(Boolean).slice(0, 4);
+  const c10 = (t.refs.find(x => /C10/.test(x.coche)) || {}).precio, e5008 = (t.refs.find(x => /E-5008/.test(x.coche)) || {}).precio;
+  el.innerHTML = `<div class="card tsum"><h4>⚡ Tesla Model Y de ocasión · datos del ${fdate(t.fecha)}</h4>${avisosHTML(['tesla_ocasion'])}
+    <div class="row"><span>Model Y a la venta (sin repetidos)</span><b>${num(r.n_y)}</b></div>
+    <div class="row"><span>Rango de precios</span><b>${eur(r.y_min)} – ${eur(r.y_max)}</b></div>
+    <div class="row"><span>RWD 2023 / 2024 (mediana)</span><b>${eur(r.y_rwd_2023_mediana)} / ${eur(r.y_rwd_2024_mediana)}</b></div>
+    <div class="row"><span>Nuevo Model Y RWD (tesla.com)</span><b>${eur(t.nuevo_ref.precio)}</b></div>
+    <div class="row"><span>Model Y 2023+ con &lt; 60.000 km, desde</span><b class="best">${best[0] ? eur(best[0].precio) : '—'}</b></div>
+    <div class="note">Mediana de un Model Y RWD de 2023: ${eur(r.y_rwd_2023_mediana)}, frente a ${eur(c10)} del Leapmotor C10 nuevo del Club y ${eur(e5008)} del mejor E-5008 de ocasión del Club. El Tesla tendría 2–3 años y bastantes más km. Con ${num(t.tin_ilustrativo * 100, 2)} % TIN a ${t.meses_ilustrativo} meses y sin entrada saldría a unos ${eur(best[0] ? cuotaIl(best[0].precio, t) : null)}/mes (estimación ilustrativa).</div>
+    <div class="mini">${best.map(x => `<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer"><b>${eur(x.precio)}</b>${esc(x.version)} · ${x.matric && x.matric.length > 4 ? fmonth(x.matric) : x.anio} · ${num(x.km)} km<br><span class="muted">${esc(x.fuente)}${x.lugar ? ' · ' + esc(x.lugar) : ''} ↗</span></a>`).join('')}</div>
+    <div class="note" style="margin-top:10px"><a href="#ocasion" id="to-tesla">Ver todos los Tesla de ocasión →</a></div></div>`;
+  const a = $('#to-tesla'); if (a) a.addEventListener('click', e => { e.preventDefault(); location.hash = 'ocasion'; setTimeout(() => $('#tesla-vo').scrollIntoView({behavior: 'smooth'}), 60); });
 }
 
 /* ------------------------------------------------------------ EVOLUCIÓN */
