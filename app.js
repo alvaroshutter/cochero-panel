@@ -82,13 +82,21 @@ function specChips(sp) {
 }
 const roofHTML = sp => sp ? (sp.techo ? `<div class="roof">☀️ <span>${esc(sp.techo)}</span></div>` : `<div class="roof unk">☁️ <span>Techo de cristal: sin confirmar en la ficha oficial</span></div>`) : '';
 
+/* ------------------------------------------------------------ avisos de capturas fallidas */
+const AV = () => (D && D.avisos) || {};
+function avisosHTML(keys) {
+  const a = AV(); const ks = keys || Object.keys(a);
+  const txt = ks.filter(k => a[k]).map(k => `<div class="aviso">⚠️ <b>${esc(a[k].fuente)}:</b> ${esc(a[k].texto)}</div>`).join('');
+  return txt ? `<div class="avisos">${txt}</div>` : '';
+}
+
 /* ------------------------------------------------------------ INICIO */
 function renderInicio() {
   const f = D.fechas;
   $('#updated').innerHTML = [
     ['Club nuevos', f.club_nuevos], ['Club ocasión', f.club_ocasion], ['Spoticar', f.spoticar],
     ['Último correo', f.correos], ['Carwow/Tesla/BYD', f.carwow_tesla_byd]
-  ].map(([l, d]) => `<span class="chip acc">${esc(l)}: <b>${fdate(d)}</b></span>`).join('');
+  ].map(([l, d]) => `<span class="chip acc">${esc(l)}: <b>datos del ${fdate(d)}</b></span>`).join('') + avisosHTML();
 
   // mejor precio: el nuevo Club más barato entre los candidatos
   const withNew = D.shortlist.filter(s => s.nuevo[0] && s.nuevo[0].precio);
@@ -146,11 +154,12 @@ function renderInicio() {
   }).join('');
 
   const n = D.novedades;
-  const blk = (t, ic, x, withKm) => {
+  const blk = (t, ic, x, withKm, avk) => {
     if (!x) return `<div class="card"><h4>${ic} ${t}</h4><div class="note">Solo hay una captura.</div></div>`;
     const li = (arr, f) => arr.slice(0, 8).map(f).join('') + (arr.length > 8 ? `<li class="muted">… y ${arr.length - 8} más</li>` : '');
     const total = x.altas.length + x.bajas.length + x.cambios.length;
-    return `<div class="card"><h4>${ic} ${t}</h4><div class="note">${fdate(x.desde)} → ${fdate(x.hasta)}</div>
+    const av = AV()[avk];
+    return `<div class="card"><h4>${ic} ${t}</h4><div class="note">${fdate(x.desde)} → ${fdate(x.hasta)}${av ? ' · captura del ' + fdate(av.fecha_fallida) + ' descartada (vacía o fallida)' : ''}</div>
       <div class="chips" style="margin:8px 0">${chip('+' + x.altas.length + ' nuevos', 'free')}${chip('−' + x.bajas.length + ' fuera', 'res')}${chip(x.cambios.length + ' cambios', 'acc')}</div>
       ${total === 0 ? '<div>Sin cambios.</div>' : ''}
       ${x.altas.length ? `<div><b>Nuevos (${x.altas.length})</b><ul>${li(x.altas, a => `<li>${esc(a.marca)} ${esc(a.modelo)} · ${eur(a.precio)}${withKm ? ' · ' + num(a.km) + ' km' : ''}</li>`)}</ul></div>` : ''}
@@ -158,7 +167,7 @@ function renderInicio() {
       ${x.cambios.length ? `<div><b>Cambios (${x.cambios.length})</b><ul>${li(x.cambios, c => `<li>${esc(c.marca)} ${esc(c.modelo)}: ${c.campo === 'reservado' ? (c.ahora ? 'reservado' : 'liberado') : eur(c.antes) + ' → ' + eur(c.ahora)}</li>`)}</ul></div>` : ''}
     </div>`;
   };
-  $('#novedades').innerHTML = blk('Nuevos Club', '🆕', n.nuevos) + blk('Ocasión Club', '🔁', n.ocasion, true) + blk('Spoticar', '🏷️', n.spoticar, true);
+  $('#novedades').innerHTML = blk('Nuevos Club', '🆕', n.nuevos, false, 'club_nuevos') + blk('Ocasión Club', '🔁', n.ocasion, true, 'club_ocasion') + blk('Spoticar', '🏷️', n.spoticar, true, 'spoticar');
 }
 
 /* ------------------------------------------------------------ filtros comunes */
@@ -208,7 +217,7 @@ function setupNuevos() {
       (!f.pmin || x.precio >= +f.pmin) && (!f.pmax || x.precio <= +f.pmax) &&
       (!q || `${x.marca} ${x.modelo} ${x.version}`.toLowerCase().includes(q)));
     it.sort(sorter(f.orden || 'precio'));
-    $('#c-nuevos').textContent = `${it.length} de ${D.nuevos.length} ofertas · captura del ${fdate(D.fechas.club_nuevos)}`;
+    $('#c-nuevos').innerHTML = esc(`${it.length} de ${D.nuevos.length} ofertas · datos del ${fdate(D.fechas.club_nuevos)}`) + avisosHTML(['club_nuevos']);
     paged($('#l-nuevos'), $('#m-nuevos'), it, cardNuevo);
   };
   box.addEventListener('input', run); run();
@@ -248,7 +257,7 @@ function setupOcasion() {
       (!q || `${x.marca} ${x.modelo} ${x.version} ${x.color || ''}`.toLowerCase().includes(q)));
     it.sort(sorter(f.orden || 'precio'));
     const res = it.filter(x => x.reservado).length;
-    $('#c-ocasion').textContent = `${it.length} coches${res ? ` (${res} reservados)` : ''} · Club ${fdate(D.fechas.club_ocasion)}, Spoticar ${fdate(D.fechas.spoticar)}`;
+    $('#c-ocasion').innerHTML = esc(`${it.length} coches${res ? ` (${res} reservados)` : ''} · Club: datos del ${fdate(D.fechas.club_ocasion)} · Spoticar: datos del ${fdate(D.fechas.spoticar)}`) + avisosHTML(['club_ocasion', 'spoticar']);
     paged($('#l-ocasion'), $('#m-ocasion'), it, cardOcasion);
   };
   $$('#ocasion-src button').forEach(b => b.addEventListener('click', () => {

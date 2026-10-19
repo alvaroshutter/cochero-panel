@@ -152,3 +152,6 @@ footer details{margin-top:8px}
  .kpi .v{font-size:1.1rem}
  .lockbtn{float:none;margin:14px 0 0 auto}
 }
+
+.avisos{display:flex;flex-direction:column;gap:6px;margin-top:8px;width:100%}
+.aviso{font-size:.85rem;padding:8px 12px;border-radius:10px;background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.45);color:var(--fg,inherit)}
